@@ -9,7 +9,6 @@ void nes_init_cpu(nes_cpu* cpu)
 
 	cpu->program_counter = 0xC000;
 
-	cpu->status_flag = 0;
 
 	cpu->interrupt_vector = 0;
 	cpu->stack_pointer = 0xFD; // 256 access range
@@ -25,6 +24,9 @@ void nes_init_cpu(nes_cpu* cpu)
 	cpu->reset = (cpu->memory[0xFFFD] << 8) | cpu->memory[0xFFFC];
 	cpu->nmi = (cpu->memory[0xFFFB] << 8) | cpu->memory[0xFFFA];
 	cpu->irq = (cpu->memory[0xFFFF] << 8) | cpu->memory[0xFFFE];
+
+	cpu->status_flag = 0x24;
+
 }
 
 void nes_init_instructions(nes_cpu* cpu)
@@ -392,45 +394,9 @@ void print_opcode_table() {
 	}
 }
 
-void nes_log(nes_cpu *cpu, u16 pc, u8 opcode)
+void nes_log(nes_cpu* cpu, u16 pc, u8 opcode)
 {
-	FILE* stream;
-	if ((stream = fopen("my_nestest.txt", "w")) == 0)
-	{
-		fprintf(stderr, "fopen() failed to open: %s\n");
-		return;
-	}
 
-	char buf[1024];
-	sprintf(buf, "%04X\t %02X %02X %02X %02X %04X\t \t\t A:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:%d\n",
-		pc, opcode, cpu->operands[0], cpu->operands[1], opcode, (cpu->operands[1] << 8) | cpu->operands[0],
-		cpu->a, cpu->x, cpu->y, cpu->status_flag, cpu->stack_pointer, cpu->clock_counter);
-
-	fprintf(stream, "%s", buf);
-
-
-	printf("%04X \t", pc);
-	printf("%02X ", opcode);
-
-	printf("%02X ", cpu->operands[0]);
-	printf("%02X ", cpu->operands[1]);
-
-	printf("%02X ", opcode);
-	printf("%04X\t", (cpu->operands[1] << 8) | cpu->operands[0]);
-
-	printf("\t\t");
-
-	printf("A:%02X ", cpu->a);
-	printf("X:%02X ", cpu->x);
-	printf("Y:%02X ", cpu->y);
-	printf("P:%02X ", cpu->status_flag);
-
-	printf("SP:%02X ", cpu->stack_pointer);
-
-	printf("CYC:%d\n", cpu->clock_counter);
-
-
-	fclose(stream);
 }
 
 void nes_cpu_run(nes_cpu *cpu)
@@ -443,28 +409,48 @@ void nes_cpu_run(nes_cpu *cpu)
 		fprintf(stderr, "fopen() failed to open: %s\n");
 		return;
 	}
-	while (i < 100)
-	{
-		// fetch
-		u16 pc = cpu->program_counter;
-		//printf("pc: 0x%04X\n", pc);
 
+	while (i < 200)
+	{
+		u16 pc = cpu->program_counter;
 		u8 opcode = cpu->memory[cpu->program_counter++];
-		//printf("fetched: 0x%X\n", opcode);
-		//printf("clock cycle: %d\n", cpu->clock_counter);
-		//nes_log(cpu, pc, opcode);
+
+		printf("%04X ", pc);
+
+		char buf1[1024];
+		sprintf(buf1, "%d%d%d%d%d%d%d%d \t\t A:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:%d\n",
+			(cpu->status_flag >> 7) & 1,
+			(cpu->status_flag >> 6) & 1,
+			(cpu->status_flag >> 5) & 1,
+			(cpu->status_flag >> 4) & 1,
+			(cpu->status_flag >> 3) & 1,
+			(cpu->status_flag >> 2) & 1,
+			(cpu->status_flag >> 1) & 1,
+			(cpu->status_flag >> 0) & 1,
+			cpu->a,
+			cpu->x,
+			cpu->y,
+			cpu->status_flag,
+			cpu->stack_pointer,
+			cpu->clock_counter);
 
 		opcode_definition entry = _opcode[opcode];
 		entry.instruction(cpu, entry.address_mode, entry.mem_type, entry.cycle);
 
-		char buf[1024];
-		sprintf(buf, "%04X\t %02X %02X %02X NAME %04X\t \t\t A:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:%d\n",
-			pc, opcode, cpu->operands[0], cpu->operands[1], (cpu->operands[1] << 8) | cpu->operands[0],
-			cpu->a, cpu->x, cpu->y, cpu->status_flag, cpu->stack_pointer, cpu->clock_counter);
+		char buf2[1024];
+		sprintf(buf2, "%04X\t %02X %02X %02X %s %04X\t",
+			pc, 
+			opcode, 
+			cpu->operands[0], 
+			cpu->operands[1], 
+			disassemble_table[opcode].name, 
+			(cpu->operands[1] << 8) | cpu->operands[0]);
 
-		fprintf(stream, "%s", buf);
+		fprintf(stream, "%s", buf2);
+		fprintf(stream, "%s", buf1);
+
 		i++;
 	}
-	fclose(stream);
 
+	fclose(stream);
 }

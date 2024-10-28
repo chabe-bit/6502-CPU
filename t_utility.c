@@ -21,22 +21,21 @@ void push_stack(nes_cpu* cpu, u8 value)
 	cpu->memory[STACK + cpu->stack_pointer] = value;
 	cpu->stack_pointer--;
 
-	printf("Pushed onto stack: 0x%04X at 0x%04X\n", value, STACK + cpu->stack_pointer);
+	printf("Pushed onto stack: 0x%02X at 0x%02X\n", value, STACK + cpu->stack_pointer);
 }
 
 u8 pull_stack(nes_cpu* cpu)
 {
-	if (cpu->stack_pointer == 0xFF)
+	if (cpu->stack_pointer > 0xFF)
 	{
 		fprintf(stderr, "Stack is empty, cannot pull: 0x%02X off the stack.\n");
 		return -1;
 	}
 
 	cpu->stack_pointer++;
-
 	u8 value = cpu->memory[STACK + cpu->stack_pointer];
 
-	printf("Pull from stack: 0x%04X\n", value);
+	printf("Pulled from stack: 0x%02X at 0x%02X\n", value, STACK + cpu->stack_pointer);
 	return value;
 }
 
@@ -70,7 +69,7 @@ void print_stack(nes_cpu* cpu)
 
 void view_status_flag(u8 value)
 {
-	printf("status_flag: %d%d%d%d%d%d%d%d\n",
+	printf("%d%d%d%d%d%d%d%d\n",
 		(value >> 7) & 1,
 		(value >> 6) & 1,
 		(value >> 5) & 1,

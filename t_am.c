@@ -5,6 +5,8 @@ u16 am_rel(nes_cpu* cpu)
 {
 	u8 signed_value = cpu->memory[cpu->program_counter++];
 	
+	push_operand(cpu, signed_value, 0);
+
 	printf("rel\n");
 
 	return signed_value;
@@ -70,10 +72,10 @@ u16 am_zpg(nes_cpu* cpu)
 	u8 operand = cpu->memory[cpu->program_counter++];
 	push_operand(cpu, operand, 0);
 
-	u16 eff_addr = cpu->memory[operand];
+	//u16 eff_addr = (1 << 8 | operand);
 
 	printf("zpg\n");
-	return eff_addr;
+	return operand;
 }
 
 u16 am_abs_ind(nes_cpu* cpu)
@@ -109,6 +111,7 @@ u16 am_abs_y(nes_cpu* cpu)
 	{
 		cpu->clock_counter += 1;
 	}
+
 	push_operand(cpu, lo, hi);
 
 	printf("abs_y\n");
@@ -152,9 +155,9 @@ u16 am_abs(nes_cpu* cpu)
 
 u16 am_impl(nes_cpu* cpu)
 {
-	u16 addr = cpu->memory[cpu->program_counter];
+	u16 addr = cpu->program_counter;
 
-	push_operand(cpu, 0, 0);
+	push_operand(cpu, cpu->memory[addr], 0);
 
 	printf("impl\n");
 	return addr;
@@ -164,15 +167,17 @@ u16 am_a(nes_cpu* cpu)
 {
 	u16 a = cpu->a;
 
+	push_operand(cpu, a, 0);
+
 	printf("acc\n");
 	return a;
 }
 
 u16 am_imm(nes_cpu* cpu)
 {
-	u16 addr = cpu->memory[cpu->program_counter++];
+	u16 addr = cpu->program_counter++;
 
-	push_operand(cpu, addr, 0);
+	push_operand(cpu, cpu->memory[addr], 0);
 
 	printf("imm\n");
 	return addr;

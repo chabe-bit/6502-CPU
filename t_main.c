@@ -20,5 +20,6 @@ int main()
 	//print_opcode_table();
 	nes_cpu_run(&cpu);
 
+
 	return 0;
 }
