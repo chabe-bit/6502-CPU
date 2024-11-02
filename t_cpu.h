@@ -3,11 +3,30 @@
 
 typedef enum
 {
+    OPERAND_NONE,
+    OPERAND_ADDRESS,
+    OPERAND_VALUE,
+    OPERAND_ACCUMULATOR
+} am_return_type;
+
+typedef struct
+{
+    am_return_type type;
+    union
+    {
+        u8 value; 
+        u16 address; // 8 or 16 bit
+    };
+} am_t;
+
+typedef enum
+{
 	IMMEDIATE,
 	ACCUMULATOR,
 	ZPG,
 	ABS
 } address_mode_access;
+
 
 // Status flags
 #define FLAG_CARRY		 0x01
@@ -33,13 +52,8 @@ typedef struct
 	u8 y;
 	u8 status_register;
 	u8 stack_pointer;
-	u8 stack_op_pointer;
-
-	u16 program_counter;
-
 	u8 status_flag;
 
-	// NES NTSC
 	f32 clock_frequency;
 	u64 clock_counter;
 
@@ -48,22 +62,36 @@ typedef struct
 	u8 nmi;
 	u8 irq;
 
-	// 0x0000 - 0xFFFF
+    u16 program_counter;
 	u8 memory[65536];
 	u8 operands[2];
 } nes_cpu;
 
 
-typedef void (*Instructions)(nes_cpu* cpu, u16(*address_mode)(nes_cpu*), int mem_type, u8 cycle);
+typedef void (*Instructions)(nes_cpu* cpu, u16(*address_mode)(nes_cpu*, bool), bool page_cross_toggle, int mem_type, u8 cycle);
 
 typedef struct
 {
 	u8 opcode;
 	Instructions instruction;
-	u16(*address_mode)(nes_cpu*);
+	u16(*address_mode)(nes_cpu*, bool);
+    bool page_cross_toggle;
 	int mem_type;
 	u8 cycle;
 } opcode_definition;
+internal opcode_definition _opcode[256];
+
+///////////////////////////////////////////////////////////////////////////////
+typedef void (*instructions_t)(nes_cpu* cpu, am_t mode, u8 cycle);
+
+typedef struct
+{
+    u8 opcode;
+    instructions_t instruction;
+    am_t(*mode)(nes_cpu*);
+    u8 cycle;
+} t_opcode_definition;
+internal t_opcode_definition t_opcode[256];
 
 typedef struct
 {
@@ -108,7 +136,6 @@ internal disassemble disassemble_table[256] = {
 
 
 
-internal opcode_definition _opcode[256];
 internal bool running = false;
 
 void nes_init_instructions(nes_cpu* cpu);
@@ -116,3 +143,5 @@ void nes_init_cpu(nes_cpu *cpu);
 void print_opcode_table();
 void nes_cpu_run(nes_cpu* cpu);
 
+
+void t_nes_init_instructions(nes_cpu* cpu);

@@ -7,6 +7,7 @@ int main()
 {
 	nes_cpu cpu = { 0 };
 	nes_init_cpu(&cpu);
+	//t_nes_init_instructions(&cpu);
 	nes_init_instructions(&cpu);
 
 	ines_file_format ines = { 0 };
@@ -19,7 +20,6 @@ int main()
 
 	//print_opcode_table();
 	nes_cpu_run(&cpu);
-
 
 	return 0;
 }
